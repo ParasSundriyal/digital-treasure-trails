@@ -9,8 +9,10 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import serverless from 'serverless-http';
-import { createServer } from '../server/src/server';
-import { connectToDatabase } from '../server/src/config/db';
+// Import compiled server outputs from `server/dist` to ensure imports resolve
+// correctly during Vercel builds (server build runs first).
+import { createServer } from '../server/dist/server.js';
+import { connectToDatabase } from '../server/dist/config/db.js';
 
 // Cache the Express app and serverless handler across invocations
 let app: ReturnType<typeof createServer> | null = null;
