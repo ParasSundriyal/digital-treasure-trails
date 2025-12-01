@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, Trophy, Users, Clock, Play, Pause } from "lucide-react";
+import { Home, Trophy, Users, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,30 +11,51 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+
+type LeaderboardItem = {
+  rank: number;
+  teamName: string;
+  currentRound: number;
+  lastScanTime: string | null;
+  totalTimeSeconds: number;
+  status: string;
+};
+
+type UnlockItem = {
+  round: number;
+  code: string;
+  status: "active" | "used" | "pending";
+};
+
+type StatsResponse = {
+  totalRounds: number;
+  activeTeams: number;
+  completedHunts: number;
+};
 
 const InstructorPanel = () => {
-  const [gameStatus, setGameStatus] = useState<"running" | "paused">("running");
-  const [currentRound] = useState(2);
-  
-  const [leaderboard] = useState([
-    { rank: 1, teamName: "Team Alpha", currentRound: 3, lastScanTime: "14:23:45", totalTime: "45:23" },
-    { rank: 2, teamName: "Team Bravo", currentRound: 3, lastScanTime: "14:24:12", totalTime: "45:50" },
-    { rank: 3, teamName: "Team Charlie", currentRound: 2, lastScanTime: "14:20:30", totalTime: "43:08" },
-    { rank: 4, teamName: "Team Delta", currentRound: 2, lastScanTime: "14:21:15", totalTime: "43:53" },
-    { rank: 5, teamName: "Team Echo", currentRound: 2, lastScanTime: "14:22:00", totalTime: "44:38" },
-  ]);
+  const { data: leaderboard = [], isLoading: loadingLeaderboard } = useQuery<LeaderboardItem[]>({
+    queryKey: ["leaderboard"],
+    queryFn: () => apiFetch<LeaderboardItem[]>("/game/leaderboard"),
+    refetchInterval: 5000,
+  });
 
-  const [unlockCodes] = useState([
-    { round: 1, code: "LIBRARY", status: "used" },
-    { round: 2, code: "GARDEN", status: "active" },
-    { round: 3, code: "TECHLAB", status: "pending" },
-    { round: 4, code: "STADIUM", status: "pending" },
-    { round: 5, code: "VICTORY", status: "pending" },
-  ]);
+  const { data: unlockCodes = [], isLoading: loadingUnlocks } = useQuery<UnlockItem[]>({
+    queryKey: ["unlock-codes"],
+    queryFn: () => apiFetch<UnlockItem[]>("/game/unlock-codes"),
+    refetchInterval: 5000,
+  });
 
-  const toggleGameStatus = () => {
-    setGameStatus(gameStatus === "running" ? "paused" : "running");
-  };
+  const { data: stats } = useQuery<StatsResponse>({
+    queryKey: ["game-stats-instructor"],
+    queryFn: () => apiFetch<StatsResponse>("/game/stats"),
+    refetchInterval: 5000,
+  });
+
+  const currentRound = leaderboard[0]?.currentRound ?? 0;
+  const activeTeams = stats?.activeTeams ?? leaderboard.length;
 
   return (
     <div className="min-h-screen gradient-surface">
@@ -49,12 +69,9 @@ const InstructorPanel = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Badge
-              variant={gameStatus === "running" ? "default" : "secondary"}
-              className={gameStatus === "running" ? "gradient-primary text-primary-foreground animate-pulse-glow" : ""}
-            >
-              <div className="w-2 h-2 rounded-full bg-current mr-2"></div>
-              {gameStatus === "running" ? "Game Running" : "Game Paused"}
+            <Badge className="gradient-primary text-primary-foreground animate-pulse-glow">
+              <div className="w-2 h-2 rounded-full bg-current mr-2" />
+              Live
             </Badge>
             <Link to="/">
               <Button variant="outline" size="sm">
@@ -71,42 +88,30 @@ const InstructorPanel = () => {
           <Card className="p-6 gradient-primary text-primary-foreground shadow-glow">
             <Users className="w-8 h-8 mb-2 opacity-90" />
             <div className="text-sm opacity-90">Active Teams</div>
-            <div className="text-3xl font-bold">{leaderboard.length}</div>
+            <div className="text-3xl font-bold">
+              {loadingLeaderboard ? "…" : activeTeams}
+            </div>
           </Card>
           
           <Card className="p-6 gradient-accent text-accent-foreground shadow-glow-accent">
             <Trophy className="w-8 h-8 mb-2 opacity-90" />
-            <div className="text-sm opacity-90">Current Round</div>
-            <div className="text-3xl font-bold">{currentRound}</div>
+            <div className="text-sm opacity-90">Leading Round</div>
+            <div className="text-3xl font-bold">
+              {loadingLeaderboard ? "…" : currentRound || "-"}
+            </div>
           </Card>
           
           <Card className="p-6 bg-card shadow-elevated">
             <Clock className="w-8 h-8 mb-2 text-muted-foreground" />
-            <div className="text-sm text-muted-foreground">Avg Time</div>
-            <div className="text-3xl font-bold">44:30</div>
+            <div className="text-sm text-muted-foreground">Completed Hunts</div>
+            <div className="text-3xl font-bold text-success">
+              {stats?.completedHunts ?? 0}
+            </div>
           </Card>
 
           <Card className="p-6 bg-card shadow-elevated">
-            <Button
-              onClick={toggleGameStatus}
-              className={`w-full h-full ${
-                gameStatus === "running"
-                  ? "bg-destructive hover:bg-destructive/90"
-                  : "gradient-primary hover:opacity-90"
-              }`}
-            >
-              {gameStatus === "running" ? (
-                <>
-                  <Pause className="w-5 h-5 mr-2" />
-                  Pause Game
-                </>
-              ) : (
-                <>
-                  <Play className="w-5 h-5 mr-2" />
-                  Resume Game
-                </>
-              )}
-            </Button>
+            <div className="text-sm text-muted-foreground">Total Rounds</div>
+            <div className="text-3xl font-bold">{stats?.totalRounds ?? "-"}</div>
           </Card>
         </div>
 
@@ -128,6 +133,20 @@ const InstructorPanel = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {loadingLeaderboard && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          Loading leaderboard...
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {!loadingLeaderboard && leaderboard.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          No teams yet.
+                        </TableCell>
+                      </TableRow>
+                    )}
                     {leaderboard.map((team) => (
                       <TableRow key={team.rank}>
                         <TableCell>
@@ -142,8 +161,16 @@ const InstructorPanel = () => {
                         <TableCell className="text-center">
                           <Badge variant="outline">{team.currentRound}</Badge>
                         </TableCell>
-                        <TableCell className="font-mono text-sm">{team.lastScanTime}</TableCell>
-                        <TableCell className="font-mono text-sm">{team.totalTime}</TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {team.lastScanTime
+                            ? new Date(team.lastScanTime).toLocaleTimeString()
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {team.totalTimeSeconds
+                            ? `${Math.round(team.totalTimeSeconds / 60)} min`
+                            : "-"}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -158,6 +185,12 @@ const InstructorPanel = () => {
                 <h2 className="text-xl font-bold">Unlock Codes</h2>
               </div>
               <div className="p-6 space-y-3">
+                {loadingUnlocks && (
+                  <p className="text-sm text-muted-foreground">Loading unlock codes...</p>
+                )}
+                {!loadingUnlocks && unlockCodes.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No rounds configured yet.</p>
+                )}
                 {unlockCodes.map((item) => (
                   <div
                     key={item.round}

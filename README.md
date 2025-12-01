@@ -59,6 +59,20 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Express + MongoDB (backend lives in `server/`)
+
+## Running the backend
+
+The backend lives in `server/` and exposes REST endpoints for rounds, teams, and live gameplay.
+
+```bash
+cd server
+cp env.example .env
+npm install
+npm run dev
+```
+
+Set `MONGO_URI` in the `.env` file to point at your MongoDB instance. The API will start on `http://localhost:5000` and includes a `/health` route for quick checks. Admins can auto-generate or manually assign unique start codes per team via `POST /api/teams/:id/start-code`.
 
 ## How can I deploy this project?
 

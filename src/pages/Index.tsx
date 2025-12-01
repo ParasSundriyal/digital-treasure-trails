@@ -26,9 +26,9 @@ const Index = () => {
             <p className="text-muted-foreground mb-6">
               Create rounds, generate QR codes, and manage the treasure hunt
             </p>
-            <Link to="/admin">
+            <Link to="/admin/login">
               <Button className="w-full gradient-primary hover:opacity-90 shadow-glow">
-                Enter Admin
+                Admin Login
               </Button>
             </Link>
           </Card>
@@ -37,13 +37,20 @@ const Index = () => {
             <Users className="w-16 h-16 mx-auto mb-4 text-accent" />
             <h2 className="text-2xl font-bold mb-3">Team Portal</h2>
             <p className="text-muted-foreground mb-6">
-              Enter your code, solve clues, and scan QR codes to progress
+              Sign up or log in as a team, solve clues, and scan QR codes to progress
             </p>
-            <Link to="/team">
-              <Button className="w-full gradient-accent hover:opacity-90 shadow-glow-accent">
-                Join as Team
-              </Button>
-            </Link>
+            <div className="flex flex-col gap-2">
+              <Link to="/team/signup">
+                <Button className="w-full gradient-accent hover:opacity-90 shadow-glow-accent">
+                  Team Sign Up
+                </Button>
+              </Link>
+              <Link to="/team/login">
+                <Button variant="outline" className="w-full border-2 border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+                  Team Login
+                </Button>
+              </Link>
+            </div>
           </Card>
 
           <Card className="p-8 text-center hover:shadow-elevated transition-all duration-300 animate-scale-in border-2" style={{ animationDelay: "0.2s" }}>

@@ -8,8 +8,15 @@ interface QRCodeDisplayProps {
 
 const QRCodeDisplay = ({ qrId, roundNumber }: QRCodeDisplayProps) => {
   const handleDownload = () => {
-    // Mock download functionality
-    console.log(`Downloading QR code for ${qrId}`);
+    // Placeholder: integrate real QR image generation if needed
+    const text = `Round ${roundNumber} - QR ID: ${qrId}`;
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `round-${roundNumber}-qr.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -21,7 +28,7 @@ const QRCodeDisplay = ({ qrId, roundNumber }: QRCodeDisplayProps) => {
           </div>
         </div>
       </div>
-      
+
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Round Number:</span>
@@ -34,7 +41,7 @@ const QRCodeDisplay = ({ qrId, roundNumber }: QRCodeDisplayProps) => {
       </div>
 
       <Button onClick={handleDownload} className="w-full gradient-primary hover:opacity-90">
-        Download QR Code
+        Download QR Info
       </Button>
     </div>
   );

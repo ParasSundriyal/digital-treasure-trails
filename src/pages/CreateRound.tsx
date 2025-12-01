@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
 
 const CreateRound = () => {
   const navigate = useNavigate();
@@ -17,20 +18,37 @@ const CreateRound = () => {
     hint: "",
     unlockCode: "",
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Mock QR ID generation
-    const qrId = `QR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    toast.success("Round created successfully!", {
-      description: `QR ID: ${qrId}`,
-    });
+    setLoading(true);
 
-    setTimeout(() => {
+    try {
+      const payload = {
+        roundNumber: Number(formData.roundNumber),
+        clueText: formData.clueText,
+        description: formData.description || undefined,
+        hint: formData.hint || undefined,
+        unlockCode: formData.unlockCode,
+      };
+
+      const round = await apiFetch<{ qrId: string; roundNumber: number }>("/rounds", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      toast.success("Round created successfully!", {
+        description: `QR ID: ${round.qrId}`,
+      });
+
       navigate("/admin/manage-rounds");
-    }, 1500);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create round";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -119,9 +137,13 @@ const CreateRound = () => {
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button type="submit" className="flex-1 gradient-primary hover:opacity-90 shadow-glow">
+              <Button
+                type="submit"
+                className="flex-1 gradient-primary hover:opacity-90 shadow-glow"
+                disabled={loading}
+              >
                 <Save className="w-4 h-4 mr-2" />
-                Create Round
+                {loading ? "Creating..." : "Create Round"}
               </Button>
               <Link to="/admin" className="flex-1">
                 <Button type="button" variant="outline" className="w-full">

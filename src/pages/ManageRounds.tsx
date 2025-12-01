@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Download, Eye, Trash2, QrCode } from "lucide-react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,34 +12,53 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import QRCodeDisplay from "@/components/QRCodeDisplay";
+import { apiFetch } from "@/lib/api";
+import { toast } from "sonner";
+
+type Round = {
+  _id: string;
+  roundNumber: number;
+  clueText: string;
+  qrId: string;
+  unlockCode: string;
+  createdAt: string;
+};
 
 const ManageRounds = () => {
-  const [rounds] = useState([
-    {
-      id: 1,
-      roundNumber: 1,
-      clueText: "Where knowledge flows in silent rows, between the pages wisdom grows.",
-      qrId: "QR-1001-ABC123",
-      unlockCode: "LIBRARY",
-      createdAt: "2025-01-15",
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery<Round[]>({
+    queryKey: ["rounds"],
+    queryFn: () => apiFetch<Round[]>("/rounds"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<void>(`/rounds/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      toast.success("Round deleted");
+      queryClient.invalidateQueries({ queryKey: ["rounds"] });
     },
-    {
-      id: 2,
-      roundNumber: 2,
-      clueText: "Green leaves dance in morning light, where students gather day and night.",
-      qrId: "QR-1002-DEF456",
-      unlockCode: "GARDEN",
-      createdAt: "2025-01-15",
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : "Failed to delete round";
+      toast.error(message);
     },
-    {
-      id: 3,
-      roundNumber: 3,
-      clueText: "Numbers crunch and circuits hum, where future tech has just begun.",
-      qrId: "QR-1003-GHI789",
-      unlockCode: "TECHLAB",
-      createdAt: "2025-01-15",
-    },
-  ]);
+  });
+
+  const rounds = data ?? [];
+
+  const handleDownloadQrInfo = (round: Round) => {
+    const text = `Round ${round.roundNumber}\nQR ID: ${round.qrId}\nUnlock Code: ${round.unlockCode}`;
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `round-${round.roundNumber}-qr-info.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen gradient-surface">
@@ -65,8 +84,15 @@ const ManageRounds = () => {
         </div>
 
         <div className="space-y-4">
+          {isLoading && <p className="text-muted-foreground">Loading rounds...</p>}
+          {!isLoading && rounds.length === 0 && (
+            <p className="text-muted-foreground">No rounds created yet.</p>
+          )}
           {rounds.map((round) => (
-            <Card key={round.id} className="p-6 hover:shadow-elevated transition-all duration-300">
+            <Card
+              key={round._id}
+              className="p-6 hover:shadow-elevated transition-all duration-300"
+            >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
@@ -74,7 +100,7 @@ const ManageRounds = () => {
                       Round {round.roundNumber}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
-                      Created: {round.createdAt}
+                      Created: {new Date(round.createdAt).toLocaleString()}
                     </span>
                   </div>
                   
@@ -107,11 +133,22 @@ const ManageRounds = () => {
                     </DialogContent>
                   </Dialog>
 
-                  <Button variant="outline" size="sm" className="text-primary">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-primary"
+                    onClick={() => handleDownloadQrInfo(round)}
+                  >
                     <Download className="w-4 h-4" />
                   </Button>
 
-                  <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-destructive-foreground">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => deleteMutation.mutate(round._id)}
+                    disabled={deleteMutation.isPending}
+                  >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
