@@ -21,6 +21,10 @@ import router from './routes/index.js';
 export const createServer = () => {
   const app = express();
 
+  app.get("/", (req, res) => {
+    res.send("Treasure Hunt Backend Live ⚡");
+  });
+  
   // Security headers - configure helmet for production
   app.use(
     helmet({
