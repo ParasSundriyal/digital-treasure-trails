@@ -1,22 +1,13 @@
-# Dependencies
+# Dependencies (these are installed, not needed in deployment)
 node_modules
 server/node_modules
 
-# Build outputs
+# Build outputs (generated during build)
 dist
 build
 server/dist
 
-# Server source files - CRITICAL: These should NEVER be served
-server/src
-server/tsconfig.json
-server/package.json
-server/package-lock.json
-server/README.md
-server/env.example
-server/vercel.json
-
-# Environment files
+# Environment files (sensitive, should not be deployed)
 .env
 .env.local
 .env.*.local
@@ -27,13 +18,12 @@ server/.env.local
 *.log
 .DS_Store
 
-# TypeScript source files (except API handlers and frontend)
-*.ts
-!api/**/*.ts
-!src/**/*.ts
-!vite.config.ts
-!tsconfig*.json
-
-# Documentation
+# Documentation files (not needed for runtime)
 *.md
 !README.md
+
+# Note: 
+# - server/src is NEEDED for the API handler (api/[...path].ts imports from it)
+# - server/package.json might be needed for Vercel's build process
+# - These files are NOT served as static files due to vercel.json routing rules
+# - Only /api/* routes go to the serverless function, everything else goes to frontend
