@@ -124,3 +124,8 @@ export const createServer = () => {
   return app;
 };
 
+// Vercel and some other platforms expect a default export for a server module.
+// Exporting the `createServer` function as the default ensures compatibility
+// with those platforms if they import this file as the module entrypoint.
+export default createServer;
+
