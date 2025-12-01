@@ -101,3 +101,8 @@ export default async function vercelHandler(
     }
   }
 }
+export const config = {
+  runtime: "nodejs18.x",
+  memory: 1024, // optional but matches your vercel.json
+};
+
