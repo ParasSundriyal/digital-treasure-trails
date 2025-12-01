@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "vercel-build": "vite build"
+    "vercel-build": "npm --prefix server ci && npm --prefix server run build && vite build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -88,7 +88,6 @@
     "@types/morgan": "^1.9.9",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/bcryptjs": "^2.4.6",
-    "@types/serverless-http": "^2.1.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",

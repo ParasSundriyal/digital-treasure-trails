@@ -9,8 +9,8 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import serverless from 'serverless-http';
-import { createServer } from '../server/src/server.js';
-import { connectToDatabase } from '../server/src/config/db.js';
+import { createServer } from '../server/src/server';
+import { connectToDatabase } from '../server/src/config/db';
 
 // Cache the Express app and serverless handler across invocations
 let app: ReturnType<typeof createServer> | null = null;
@@ -102,7 +102,7 @@ export default async function vercelHandler(
   }
 }
 export const config = {
-  runtime: "nodejs18.x",
-  memory: 1024, // optional but matches your vercel.json
+  runtime: "nodejs20.x",
+  memory: 1024, // keep parity with vercel.json in root
 };
 
