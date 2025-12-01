@@ -72,7 +72,8 @@
     "morgan": "^1.10.0",
     "nanoid": "^5.0.7",
     "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3"
+    "bcryptjs": "^2.4.3",
+    "serverless-http": "^3.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
@@ -87,6 +88,7 @@
     "@types/morgan": "^1.9.9",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/bcryptjs": "^2.4.6",
+    "@types/serverless-http": "^2.1.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",

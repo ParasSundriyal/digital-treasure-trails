@@ -1,19 +1,33 @@
+/**
+ * Vercel Serverless Function Handler
+ * 
+ * This is the entry point for all API requests on Vercel.
+ * It wraps the Express app using serverless-http to handle serverless invocations.
+ * 
+ * Database connection is cached globally to prevent reconnection on every request.
+ */
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import serverless from 'serverless-http';
 import { createServer } from '../server/src/server.js';
 import { connectToDatabase } from '../server/src/config/db.js';
 
-// Cache the Express app and DB connection across serverless invocations
+// Cache the Express app and serverless handler across invocations
 let app: ReturnType<typeof createServer> | null = null;
+let handler: ReturnType<typeof serverless> | null = null;
 let dbConnectionPromise: Promise<void> | null = null;
 
-// Initialize server and database connection (optimized for serverless)
-const initServer = async () => {
-  // Create Express app if not exists
+/**
+ * Initialize the serverless handler
+ * This function is called once per cold start, then cached
+ */
+const initServerlessHandler = async () => {
+  // Create Express app if not cached
   if (!app) {
     app = createServer();
   }
 
-  // Ensure database connection (reuse existing connection if available)
+  // Ensure database connection (cached globally)
   if (!dbConnectionPromise) {
     dbConnectionPromise = connectToDatabase().catch((error) => {
       console.error('Database connection error:', error);
@@ -25,15 +39,26 @@ const initServer = async () => {
   // Wait for database connection
   await dbConnectionPromise;
 
-  return app;
+  // Create serverless handler if not cached
+  if (!handler) {
+    handler = serverless(app, {
+      binary: ['image/*', 'application/pdf'], // Handle binary responses
+    });
+  }
+
+  return handler;
 };
 
-// Vercel serverless function handler
-export default async function handler(
+/**
+ * Vercel serverless function handler
+ * This is called for each API request
+ */
+export default async function vercelHandler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // Set timeout for serverless functions (Vercel has a max execution time)
+  // Set timeout for serverless functions
+  // Vercel free tier: 10s, Pro: 60s
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(504).json({ 
@@ -41,10 +66,11 @@ export default async function handler(
         message: 'Request took too long to process'
       });
     }
-  }, 25000); // 25 seconds (Vercel free tier has 10s, pro has 60s)
+  }, 25000); // 25 seconds (safe for Pro tier)
 
   try {
-    const server = await initServer();
+    // Initialize handler (cached after first call)
+    const serverlessHandler = await initServerlessHandler();
     
     // Clear timeout on successful response
     const originalEnd = res.end.bind(res);
@@ -53,11 +79,12 @@ export default async function handler(
       return originalEnd(...args);
     };
 
-    return server(req, res);
+    // Handle the request using serverless-http
+    return serverlessHandler(req, res);
   } catch (error) {
     clearTimeout(timeout);
     
-    console.error('Server initialization error:', {
+    console.error('Serverless handler error:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       path: req.url,

@@ -8,6 +8,16 @@ import env from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import router from './routes/index.js';
 
+/**
+ * Create Express Application
+ * 
+ * This function creates and configures the Express app.
+ * It does NOT start a server - that's handled separately:
+ * - Local dev: server/src/index.ts calls app.listen()
+ * - Vercel: api/[...path].ts uses serverless-http wrapper
+ * 
+ * @returns {Express} Configured Express application
+ */
 export const createServer = () => {
   const app = express();
 
