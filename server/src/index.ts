@@ -1,5 +1,12 @@
 // This file is ONLY for local development
 // For Vercel deployment, use api/[...path].ts instead
+
+// Prevent execution in Vercel/production environment
+if (process.env.VERCEL || process.env.VERCEL_ENV) {
+  console.log('Skipping server startup - running in Vercel environment');
+  process.exit(0);
+}
+
 import env from './config/env.js';
 import { connectToDatabase } from './config/db.js';
 import { createServer } from './server.js';
