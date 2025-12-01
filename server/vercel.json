@@ -1,19 +1,13 @@
 {
     "version": 2,
-    "builds": [
-      {
-        "src": "api/[...path].ts",
-        "use": "@vercel/node"
+    "functions": {
+      "api/[...path].ts": {
+        "runtime": "nodejs18.x",
+        "memory": 1024
       }
-    ],
+    },
     "routes": [
-      {
-        "src": "/api/(.*)",
-        "dest": "/api/[...path].ts"
-      }
-    ],
-    "env": {
-      "NODE_ENV": "production"
-    }
+      { "src": "/api/(.*)", "dest": "/api/[...path].ts" }
+    ]
   }
   
