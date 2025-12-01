@@ -1,3 +1,5 @@
+// This file is ONLY for local development
+// For Vercel deployment, use api/[...path].ts instead
 import env from './config/env.js';
 import { connectToDatabase } from './config/db.js';
 import { createServer } from './server.js';
@@ -16,4 +18,3 @@ const start = async () => {
 };
 
 void start();
-
