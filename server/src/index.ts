@@ -7,18 +7,24 @@
  * DO NOT import or execute this file in Vercel/production environments.
  */
 
-// Prevent execution in Vercel/production environment
-if (process.env.VERCEL || process.env.VERCEL_ENV || process.env.VERCEL_URL) {
+// Check environment FIRST - before any imports
+// This prevents execution in Vercel environments
+const isVercel = process.env.VERCEL || process.env.VERCEL_ENV || process.env.VERCEL_URL;
+
+if (isVercel) {
   console.log('Skipping local server startup - running in Vercel environment');
   process.exit(0);
 }
 
-import env from './config/env.js';
-import { connectToDatabase } from './config/db.js';
-import { createServer } from './server.js';
-
+// Use dynamic imports to prevent module evaluation in Vercel
+// This ensures imports only happen in local development
 const startLocalServer = async () => {
   try {
+    // Dynamic imports - only executed in local dev
+    const { default: env } = await import('./config/env.js');
+    const { connectToDatabase } = await import('./config/db.js');
+    const { createServer } = await import('./server.js');
+    
     // Connect to database
     await connectToDatabase();
     
