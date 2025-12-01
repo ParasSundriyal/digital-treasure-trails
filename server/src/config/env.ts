@@ -10,14 +10,19 @@ requiredKeys.forEach((key) => {
   }
 });
 
+// Determine if we're in production/Vercel
+const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+
 const env = {
-  NODE_ENV: process.env.NODE_ENV ?? 'development',
+  NODE_ENV: process.env.NODE_ENV ?? (isProduction ? 'production' : 'development'),
   PORT: Number(process.env.PORT ?? 5000),
-  CLIENT_URL: process.env.CLIENT_URL ?? process.env.VERCEL_URL 
-    ? `https://${process.env.VERCEL_URL}` 
-    : 'http://localhost:5173',
+  CLIENT_URL: process.env.CLIENT_URL ?? 
+    (process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.VERCEL 
+        ? `https://${process.env.VERCEL}` 
+        : 'http://localhost:5173'),
   MONGO_URI: process.env.MONGO_URI as string,
 };
 
 export default env;
-

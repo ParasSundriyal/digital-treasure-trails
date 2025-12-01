@@ -2,15 +2,52 @@ import mongoose from 'mongoose';
 
 import env from './env.js';
 
+// Cache the connection to reuse in serverless environments
+let cachedConnection: typeof mongoose | null = null;
+
 export const connectToDatabase = async () => {
-  if (mongoose.connection.readyState === 1) {
-    return;
+  // Return cached connection if available and connected
+  if (cachedConnection && mongoose.connection.readyState === 1) {
+    return cachedConnection;
   }
 
-  await mongoose.connect(env.MONGO_URI, {
-    autoIndex: true,
-  });
+  // If connection exists but is not ready, close it first
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.close();
+  }
 
-  console.log('Connected to MongoDB');
+  // Optimize connection options for serverless
+  const options = {
+    autoIndex: env.NODE_ENV === 'development', // Only auto-index in development
+    maxPoolSize: 10, // Maintain up to 10 socket connections
+    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+    bufferCommands: false, // Disable mongoose buffering
+    bufferMaxEntries: 0, // Disable mongoose buffering
+  };
+
+  try {
+    cachedConnection = await mongoose.connect(env.MONGO_URI, options);
+    
+    // Handle connection events
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      console.warn('MongoDB disconnected');
+      cachedConnection = null;
+    });
+
+    if (env.NODE_ENV === 'development') {
+      console.log('Connected to MongoDB');
+    }
+    
+    return cachedConnection;
+  } catch (error) {
+    console.error('Failed to connect to MongoDB:', error);
+    cachedConnection = null;
+    throw error;
+  }
 };
 

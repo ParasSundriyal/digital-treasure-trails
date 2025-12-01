@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import mongoose from 'mongoose';
 
 import env from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -10,18 +11,95 @@ import router from './routes/index.js';
 export const createServer = () => {
   const app = express();
 
-  app.use(helmet());
+  // Security headers - configure helmet for production
   app.use(
-    cors({
-      origin: env.CLIENT_URL,
-      credentials: true,
+    helmet({
+      contentSecurityPolicy: env.NODE_ENV === 'production' ? undefined : false, // Disable CSP in dev for easier debugging
+      crossOriginEmbedderPolicy: false, // Allow embedding if needed
     }),
   );
-  app.use(express.json({ limit: '10kb' }));
-  app.use(morgan('dev'));
+  
+  // CORS configuration - allow multiple origins
+  const allowedOrigins = [
+    env.CLIENT_URL,
+    'http://localhost:5173',
+    'http://localhost:8080',
+    'http://localhost:3000',
+    // Allow Vercel preview deployments
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+    // Allow any Vercel preview URL pattern
+    /^https:\/\/.*\.vercel\.app$/,
+  ];
 
+  app.use(
+    cors({
+      origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) {
+          return callback(null, true);
+        }
+        
+        // Check if origin is in allowed list
+        const isAllowed = allowedOrigins.some((allowedOrigin) => {
+          if (typeof allowedOrigin === 'string') {
+            return origin === allowedOrigin;
+          }
+          if (allowedOrigin instanceof RegExp) {
+            return allowedOrigin.test(origin);
+          }
+          return false;
+        });
+
+        if (isAllowed) {
+          callback(null, true);
+        } else {
+          // In development, allow all origins
+          if (env.NODE_ENV === 'development') {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    }),
+  );
+  
+  // Body parser with size limit
+  app.use(express.json({ limit: '10kb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+  
+  // Logging - only in development
+  if (env.NODE_ENV === 'development') {
+    app.use(morgan('dev'));
+  } else {
+    // Minimal logging in production
+    app.use(morgan('combined', {
+      skip: (req) => req.path === '/health', // Skip health check logs
+    }));
+  }
+
+  // Health check endpoint (optimized for serverless)
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    try {
+      // Quick database connection check
+      const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+      
+      res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        database: dbStatus,
+        environment: env.NODE_ENV,
+      });
+    } catch (error) {
+      res.status(503).json({ 
+        status: 'error',
+        message: 'Service unavailable',
+        timestamp: new Date().toISOString(),
+      });
+    }
   });
 
   app.use('/api', router);
