@@ -1,14 +1,7 @@
 import { config } from 'dotenv';
 
+// Load .env in local development
 config();
-
-const requiredKeys = ['MONGO_URI'] as const;
-
-requiredKeys.forEach((key) => {
-  if (!process.env[key]) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-});
 
 // Determine if we're in production/Vercel
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
@@ -24,5 +17,13 @@ const env = {
         : 'http://localhost:5173'),
   MONGO_URI: process.env.MONGO_URI as string,
 };
+export function validateEnv() {
+  const requiredKeys = ['MONGO_URI'] as const;
+  requiredKeys.forEach((key) => {
+    if (!process.env[key]) {
+      throw new Error(`Missing required environment variable: ${key}`);
+    }
+  });
+}
 
 export default env;

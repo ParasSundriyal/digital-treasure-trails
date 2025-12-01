@@ -13,6 +13,7 @@ import serverless from 'serverless-http';
 // correctly during Vercel builds (server build runs first).
 import { createServer } from '../server/dist/server.js';
 import { connectToDatabase } from '../server/dist/config/db.js';
+import { validateEnv } from '../server/dist/config/env.js';
 
 // Cache the Express app and serverless handler across invocations
 let app: ReturnType<typeof createServer> | null = null;
@@ -28,6 +29,9 @@ const initServerlessHandler = async () => {
   if (!app) {
     app = createServer();
   }
+
+  // Ensure environment variables are present and valid for runtime
+  validateEnv();
 
   // Ensure database connection (cached globally)
   if (!dbConnectionPromise) {
