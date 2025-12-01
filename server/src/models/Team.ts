@@ -1,4 +1,4 @@
-import { Schema, model, type InferSchemaType } from 'mongoose';
+import { Schema, model, type InferSchemaType, type Document } from 'mongoose';
 
 const progressSchema = new Schema(
   {
@@ -34,7 +34,7 @@ const teamSchema = new Schema(
   { timestamps: true },
 );
 
-export type TeamDocument = InferSchemaType<typeof teamSchema>;
+export type TeamDocument = InferSchemaType<typeof teamSchema> & Document;
 
 export const Team = model<TeamDocument>('Team', teamSchema);
 

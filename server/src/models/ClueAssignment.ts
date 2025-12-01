@@ -1,4 +1,4 @@
-import { Schema, model, type InferSchemaType, Types } from 'mongoose';
+import { Schema, model, type InferSchemaType, Types, type Document } from 'mongoose';
 
 const clueAssignmentSchema = new Schema(
   {
@@ -14,7 +14,7 @@ const clueAssignmentSchema = new Schema(
   { timestamps: true },
 );
 
-export type ClueAssignmentDocument = InferSchemaType<typeof clueAssignmentSchema>;
+export type ClueAssignmentDocument = InferSchemaType<typeof clueAssignmentSchema> & Document;
 
 export const ClueAssignment = model<ClueAssignmentDocument>('ClueAssignment', clueAssignmentSchema);
 

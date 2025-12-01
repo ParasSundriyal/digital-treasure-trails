@@ -114,39 +114,36 @@ export const listHintRequests = asyncHandler(async (req, res) => {
   }
 
   const requests = await HintRequest.find(filter)
-    .populate('teamId', 'name email')
-    .populate('assignmentId', 'roundNumber clueText')
+    .populate<{ teamId: { _id: Types.ObjectId; name: string; email: string } | Types.ObjectId }>('teamId', 'name email')
+    .populate<{ assignmentId: { _id: Types.ObjectId; roundNumber: number; clueText: string } | Types.ObjectId | null }>('assignmentId', 'roundNumber clueText')
     .sort({ createdAt: -1 });
 
   res.json({
-    requests: requests.map((req) => ({
-      id: req._id,
-      team: {
-        id: req.teamId instanceof Types.ObjectId ? req.teamId.toString() : req.teamId._id,
-        name: req.teamId instanceof Types.ObjectId ? 'Unknown' : req.teamId.name,
-        email: req.teamId instanceof Types.ObjectId ? 'Unknown' : req.teamId.email,
-      },
-      roundNumber: req.roundNumber,
-      assignment: req.assignmentId
-        ? {
-            id: req.assignmentId instanceof Types.ObjectId
-              ? req.assignmentId.toString()
-              : req.assignmentId._id,
-            roundNumber:
-              req.assignmentId instanceof Types.ObjectId
-                ? undefined
-                : req.assignmentId.roundNumber,
-            clueText:
-              req.assignmentId instanceof Types.ObjectId
-                ? undefined
-                : req.assignmentId.clueText,
-          }
-        : null,
-      status: req.status,
-      requestedAt: req.requestedAt,
-      reviewedAt: req.reviewedAt,
-      reviewedBy: req.reviewedBy,
-    })),
+    requests: requests.map((req) => {
+      const teamId = req.teamId as { _id: Types.ObjectId; name: string; email: string } | Types.ObjectId;
+      const assignmentId = req.assignmentId as { _id: Types.ObjectId; roundNumber: number; clueText: string } | Types.ObjectId | null;
+      
+      return {
+        id: req._id,
+        team: {
+          id: teamId instanceof Types.ObjectId ? teamId.toString() : (teamId as { _id: Types.ObjectId })._id.toString(),
+          name: teamId instanceof Types.ObjectId ? 'Unknown' : (teamId as { name: string }).name,
+          email: teamId instanceof Types.ObjectId ? 'Unknown' : (teamId as { email: string }).email,
+        },
+        roundNumber: req.roundNumber,
+        assignment: assignmentId && !(assignmentId instanceof Types.ObjectId)
+          ? {
+              id: assignmentId._id.toString(),
+              roundNumber: assignmentId.roundNumber,
+              clueText: assignmentId.clueText,
+            }
+          : null,
+        status: req.status,
+        requestedAt: req.requestedAt,
+        reviewedAt: req.reviewedAt,
+        reviewedBy: req.reviewedBy,
+      };
+    }),
   });
 });
 

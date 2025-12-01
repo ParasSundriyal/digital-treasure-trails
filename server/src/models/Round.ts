@@ -1,6 +1,7 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model, type Document } from 'mongoose';
 
 export type RoundDocument = {
+  _id: import('mongoose').Types.ObjectId;
   roundNumber: number;
   clueText: string;
   description?: string;
@@ -10,7 +11,7 @@ export type RoundDocument = {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-};
+} & Document;
 
 const roundSchema = new Schema<RoundDocument>(
   {

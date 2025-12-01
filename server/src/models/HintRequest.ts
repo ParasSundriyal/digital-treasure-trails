@@ -1,4 +1,4 @@
-import { Schema, model, type InferSchemaType } from 'mongoose';
+import { Schema, model, type InferSchemaType, type Document } from 'mongoose';
 
 const hintRequestSchema = new Schema(
   {
@@ -20,7 +20,7 @@ const hintRequestSchema = new Schema(
 // Index to ensure one pending request per team per round
 hintRequestSchema.index({ teamId: 1, roundNumber: 1, status: 1 });
 
-export type HintRequestDocument = InferSchemaType<typeof hintRequestSchema>;
+export type HintRequestDocument = InferSchemaType<typeof hintRequestSchema> & Document;
 
 export const HintRequest = model<HintRequestDocument>('HintRequest', hintRequestSchema);
 
