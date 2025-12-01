@@ -5,7 +5,8 @@ server/node_modules
 # Build outputs (generated during build)
 dist
 build
-server/dist
+# Keep server/dist included in deploy so the serverless function can import compiled JS
+# server/dist
 
 # Environment files (sensitive, should not be deployed)
 .env
@@ -27,3 +28,6 @@ server/.env.local
 # - server/package.json might be needed for Vercel's build process
 # - These files are NOT served as static files due to vercel.json routing rules
 # - Only /api/* routes go to the serverless function, everything else goes to frontend
+
+# Ignore server-level Vercel config to prevent nested project detection
+server/vercel.json

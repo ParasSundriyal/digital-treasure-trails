@@ -1,0 +1,4 @@
+{
+  "version": 2,
+  "note": "Disabled server-level configuration; root vercel.json is authoritative. This was renamed from vercel.json to avoid Vercel detecting a nested project."
+}
